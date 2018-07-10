@@ -1,0 +1,215 @@
+
+<div>
+    <canvas id="yard" width="384" height="244"></canvas>
+</div>
+<button onclick="start()" style="background-color:yellow;"> start </button>
+<script>
+    let sound = document.createElement("audio");
+    sound.src = "bgm.mp3";
+    sound.setAttribute("preload", "auto");
+    sound.setAttribute("controls", "none");
+    sound.style.display = "none";
+    document.body.appendChild(sound);
+
+    let canv = document.getElementById('yard');
+    let ctx = canv.getContext("2d");
+
+    let clear_dirty = function(m_x, m_y, wid, hei) {
+        ctx.drawImage(maptiles, m_x, m_y, wid, hei, m_x, m_y, wid, hei);
+    }
+</script>
+
+<script>
+    let maptiles = new Image();
+    maptiles.src = "bg.png";
+
+    window.onload = function() {
+        ctx.drawImage(maptiles, 0, 0);
+        draw_sprite(hero.right[1][0], hero.right[1][1], hero_pos[0], hero_pos[1]);
+    }
+</script>
+
+<script>
+    let sprites = new Image();
+    sprites.src = "sprites.png";
+    let swid = 24;
+    let shei = 32;
+    let hero = {back: [[0, 0], [2, 0], [1, 0]],
+                right: [[0, 1], [2, 1], [1, 1]],
+                front: [[0, 2], [2, 2], [1, 2]],
+                left: [[0, 3], [2, 3], [1, 3]]};
+    let steps = {left: [-6, 0], right: [6, 0],
+                 front: [0, 8], back: [0, -8]}
+    //let hero_pos = [parseInt(canv.width/2/swid)*swid, parseInt(canv.height/2/shei)*shei];
+    let hero_pos = [5, 170];
+    let direction = "still";
+    let hero_x = hero.right[1][0];
+    let hero_y = hero.right[1][1];
+    let action = "still";
+ 
+
+    // s_x, s_y: x and y in sprite-sheet
+    // m_x, m_y: position on map.
+    let draw_sprite = function(s_x, s_y, m_x, m_y) {
+        ctx.drawImage(sprites, s_x*swid, s_y*shei,
+                      swid, shei, m_x, m_y, swid, shei);
+    };
+    let boundary_valid = function(m_x, m_y) {
+        if (m_x >= canv.width-swid || m_y >= canv.height-shei ||
+            m_x <= 0 || m_y <=0) {
+            return false;
+        }
+        return true;
+    }
+
+    let walk_step = 0
+    let prev_time = 0;
+    let walk = function() {
+        let cur = window.performance.now();
+        if (cur - prev_time < 20) {
+            return;
+        }
+        prev_time = cur;
+        let new_step = (walk_step+1) % 2;
+        hero_x = hero[direction][new_step][0];
+        hero_y = hero[direction][new_step][1]
+        walk_step = new_step;
+
+        //ctx.clearRect(hero_pos[0], hero_pos[1], swid, shei);
+        clear_dirty(hero_pos[0], hero_pos[1], swid, shei);
+        if (boundary_valid(hero_pos[0] + steps[direction][0],
+                           hero_pos[1] + steps[direction][1])) {
+            hero_pos[0] += steps[direction][0];
+            hero_pos[1] += steps[direction][1];
+        }
+        draw_sprite(hero_x, hero_y, hero_pos[0], hero_pos[1]);
+    };
+
+    /*
+    let stand = function(direction) {
+        let s_x = hero[direction][2][0]
+        let s_y = hero[direction][2][1]
+        draw_sprite(s_x, s_y, hero_pos[0], hero_pos[1]);
+    }*/
+    let jump = function() {
+        let prev_time = 0;
+        let up = true;
+        console.log(direction);
+        let direct_jump = function() {
+            let cur = window.performance.now();
+            if (cur - prev_time < 25) {
+                //
+            } else {
+                prev_time = cur;
+                clear_dirty(hero_pos[0], hero_pos[1], swid, shei);
+                if (up === true) {
+                    if (hero_pos[1] > 100) {
+                        hero_pos[1] = hero_pos[1] - 5;
+                        if (direction === "right" && hero_pos[0] < 360) {
+                            hero_pos[0] += 3; 
+                        } else if (direction === "left" && hero_pos[0] > 5) {
+                            hero_pos[0] -= 3;
+                        }
+                    } else {
+                        up = false;
+                    }
+                }
+                if (up === false) {
+                    if (hero_pos[1] <= 170) {
+                        hero_pos[1] =  hero_pos[1] + 5;
+                        if (direction === "right" && hero_pos[0] < 360) {
+                            hero_pos[0] += 3; 
+                        } else if (direction === "left" && hero_pos[0] > 5) {
+                            hero_pos[0] -= 3;
+                        }
+                    } else {
+                        draw_sprite(hero_x, hero_y, hero_pos[0], hero_pos[1]);
+                        action = "still";
+                        return;
+                    }
+                }
+                draw_sprite(hero_x, hero_y, hero_pos[0], hero_pos[1]);
+            }
+
+            window.requestAnimationFrame(direct_jump);
+        }
+        window.requestAnimationFrame(direct_jump);
+
+    };
+
+
+    let start = function() {
+        sound.play();
+
+        window.addEventListener("keydown", function(event) {
+            let code = event.keyCode;
+            if (code === 37) {
+                direction = "left";
+                walk();
+            } else if (code === 39) {
+                direction = "right";
+                walk();
+            } else if (code === 32) {
+                if (action !== "jump") {
+                    action = "jump";
+                    jump();
+                }
+            }
+
+            /*else if (code === 38) {
+                walk("back");
+                console.log("up");
+            } else if (code === 40) {
+                walk("front");
+                console.log("down");
+            }*/
+
+        });
+        window.addEventListener("keyup", function(event) {
+            let code = event.keyCode;
+            if (code === 37) {
+                direction = "still";
+            } else if (code === 39) {
+                direction = "still";
+            }
+            /*
+            else if (code === 38) {
+                stand("back");
+                console.log("up up");
+            } else if (code === 40) {
+                stand("front");
+                console.log("up down");
+            }*/
+
+        });
+    };
+
+    /*
+    var draw = function(container) {
+        let walk = function() {
+            let cur = window.performance.now();
+            if (cur - prev_time < 500) {
+                //
+            } else {
+                prev_time = cur;
+                let hero_x, hero_y;
+                if (icon_num == 0) {
+                    hero_x = smap.hero_fr[0] * swid;
+                    hero_y = smap.hero_fr[1] * shei;
+                } else if (icon_num == 1) {
+                    hero_x = smap.hero_fl[0] * swid;
+                    hero_y = smap.hero_fl[1] * shei;
+                }
+
+                icon_num = (icon_num+1)%2;
+                ctx.clearRect(hero_pos[0], hero_pos[1], swid, shei);
+                ctx.drawImage(sprites, hero_x, hero_y,
+                              swid, shei, hero_pos[0], hero_pos[1], swid, shei);
+            }
+            window.requestAnimationFrame(walk);
+        }
+        window.requestAnimationFrame(walk);
+    }
+    */
+</script>
+

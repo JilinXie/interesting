@@ -14,8 +14,21 @@ ctx.fillStyle = "green";
 ctx.shadowBlur = 15;
 ctx.shadowColor = "rgba(0, 0, 0, 0.8";
 
+function randint(start, end) {
+    return Math.floor(Math.random() * (end-start+1)) + start;
+}
 
-function draw(startX, startY, len, angle, lwidth) {
+function drawLeaves(len) {
+    ctx.beginPath();
+    let sa = randint(0, 1.3);
+    ctx.arc(0, -len, randint(5, 15), Math.PI * sa, Math.PI*(sa+0.4));
+    sa = randint(0, 1.3);
+    ctx.arc(0, -len, randint(5, 15), Math.PI * sa, Math.PI*(sa+0.3));
+    ctx.fill()
+}
+
+
+function draw(bnum, startX, startY, len, angle, lwidth) {
   ctx.beginPath();
   ctx.save();
   
@@ -29,7 +42,10 @@ function draw(startX, startY, len, angle, lwidth) {
       ctx.bezierCurveTo(-10, -len/2, -10, -len/2, 0, -len);
   }
   ctx.stroke();
-  console.log(startX, startY, angle * Math.PI/180, -len);
+
+  if (bnum > 2) {
+    drawLeaves(len);
+  }
   
   if(len <= 20) {
     ctx.beginPath();
@@ -39,14 +55,25 @@ function draw(startX, startY, len, angle, lwidth) {
     return;
   }
   
-  draw(0, -len, len*0.8, angle+10, lwidth*0.8);
-  draw(0, -len, len*0.8, angle-10, lwidth*0.8);
+  bnum += 1
+  if (randint(1, 10) > 1) {
+      draw(bnum, 0, -len, len*0.8, angle+randint(5, 15), lwidth*0.8);
+  }
+  if (randint(1, 10) > 1) {
+      draw(bnum, 0, -len, len*0.8, angle-randint(5, 15), lwidth*0.8);
+  }
+  if (randint(1, 10) > 5) {
+      draw(bnum, 0, -len, len*0.8, angle-randint(20, 25), lwidth*0.8);
+  }
+  if (randint(1, 10) > 5) {
+      draw(bnum, 0, -len, len*0.8, angle+randint(20, 25), lwidth*0.8);
+  }
   
   ctx.restore();
 }
 
 
-draw(300, 600, 120, 0, 15)
+draw(0, 300, 600, 120, 0, 15)
 
 </script>
 </body>
